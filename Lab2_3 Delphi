@@ -1,0 +1,445 @@
+Program Lab;
+
+Uses
+    System.SysUtils;
+
+Type
+    TMatrix = Array Of Array Of Real;
+    TArray = Array Of Real;
+    Errors = (
+        Success, 
+        TypeError, 
+        RangeError, 
+        MatrixError, 
+        FreeArrError,
+        
+        FilePathError, //exist
+        FileExtentError,
+        FileExistsError,
+        EmptyFileError,
+        FileMatrixError, 
+        FileFreeArrError,
+        FileLowNumberError,
+        FileHighNumberError, 
+        FileSizeError, 
+        ChoiceError );
+
+Const
+    MAX_SIZE = 1000;
+    MIN_SIZE = 2;
+    MIN_VALUE = -1000;
+    MAX_VALUE = 1000;
+
+Procedure WriteError(Const NumbError: Errors); // printing error messages
+Begin
+    Case NumbError Of
+        TypeError:
+            Writeln('Type Error');
+        RangeError:
+            Writeln('Range Error');
+        MatrixError:
+            Writeln('Matrix Error');
+        FreeArrError:
+            Writeln('FreeArr Error');
+        FilePathError:
+            Writeln('FilePath Error');
+        FileExtentError:
+            Writeln('FileExtance Error');
+        FileExistsError:
+            Writeln('FileExists Error');
+        EmptyFileError:
+            Writeln('File is Empty');
+        FileMatrixError:
+            Writeln('FileText');
+        FileLowNumberError:
+            Writeln('LowElem Error');
+        FileHighNumberError:
+            Writeln('HighElem Error');
+        FileSizeError:
+            Writeln('FileNumb Eror');
+        ChoiceError:
+            Write('Вводите число 0 или 1: ');
+        FileFreeArrError:
+            Writeln('FileFreeArrayError')
+    Else
+        Writeln('Введено успешно')
+    End;
+End;
+
+// True if from file
+Function Choice(): Boolean;
+Var
+    Choi: Integer;
+    ErrCode: Errors;
+Begin
+    Repeat
+        Choi := 0;
+        ErrCode := Success;
+        Try
+            Readln(Choi);
+        Except
+            ErrCode := ChoiceError;
+        End;
+        If (ErrCode = Success) And ((Choi < 0) Or (Choi > 1)) Then
+            ErrCode := ChoiceError;
+        WriteError(ErrCode)
+    Until ErrCode = Success;
+    Choice := (Choi = 1)
+End;
+
+
+Function ReadConsoleSize(): Integer;
+Var
+    Numb: Integer;
+    CodeError: Errors;
+Begin
+    Repeat
+        CodeError := Success;
+        Try
+            Readln(Numb);
+        Except
+            CodeError := TypeError;
+        End;
+        If (CodeError = Success) And
+          ((Numb < MIN_VALUE) Or (Numb > MAX_VALUE)) Then
+            CodeError := RangeError;
+        WriteError(CodeError);
+    Until Codeerror = Success;
+    ReadConsoleSize := Numb;
+End;
+
+
+Function ReadConsoleMatrix(Size: Integer): TMatrix;
+Var
+    I, J: Integer;
+    Matrix: TMatrix;
+    CodeError: Errors;
+Begin
+    SetLength(Matrix, Size);
+    For I := 0 To High(Matrix) Do
+        SetLength(Matrix[I], Size - I);
+    Writeln('Введите треугольную матрицу (вводить только элементы на',
+            'главной диагонали и выше) размерности ', Size, ':');
+    Repeat
+        CodeError := Success;
+        For I := 0 To High(Matrix) Do
+            For J := 0 To High(Matrix[I]) Do
+            Begin
+                Try
+                    Read(Matrix[I][J]);
+                Except
+                    CodeError := MatrixError;
+                End;
+                If (CodeError = Success) And
+                  ((Matrix[I][J] < MIN_VALUE) Or
+                  (Matrix[I][J] > MAX_VALUE)) Then
+                    CodeError := MatrixError;
+            End;
+        WriteError(CodeError);
+    Until CodeError = Success;
+    ReadConsoleMatrix := Matrix;
+End;
+
+
+Function ReadConsoleArrayFree(Size: Integer): TArray;
+Var
+    FreeArray: TArray;
+    CodeError: Errors;
+    I: Integer;
+Begin
+    SetLength(FreeArray, Size);
+    Writeln('Введите вектор свободных членов:');
+    Repeat
+        CodeError := Success;
+        For I := 0 To High(FreeArray) Do
+        Begin
+            Try
+                Read(FreeArray[I]);
+            Except
+                CodeError := FreeArrError;
+            End;
+            If (CodeError = Success) And
+              ((FreeArray[I] < MIN_VALUE) Or (FreeArray[I] > MAX_VALUE)) Then
+                CodeError := FreeArrError;
+        End;
+        WriteError(CodeError);
+    Until CodeError = Success;
+    ReadConsoleArrayFree := FreeArray;
+End;
+
+
+Procedure InputFromConsole(Var Matrix: TMatrix; Var ArrayFree: TArray);
+Var
+    Size: Integer;
+
+Begin
+    Size := ReadConsoleSize();
+    Matrix := ReadConsoleMatrix(Size);
+    ArrayFree := ReadConsoleArrayFree(Size);
+End;
+
+
+Function CheckReWriteFilePath(FilePath: String): Errors;
+Var
+    CodeError: Errors;
+    MyFile: TextFile;
+    Ext: String;
+
+Begin
+    CodeError := Success;
+    If Not FileExists(FilePath) Then
+        CodeError := FileExtentError;
+    If CodeError = Success Then
+    Begin
+        Ext := ExtractFileExt(FilePath);
+        If Not (Ext = '.txt') Then
+            CodeError := FileExtentError;
+    End;
+    If CodeError = Success Then
+    Begin
+        AssignFile(MyFile, FilePath);
+        Try
+            Rewrite(MyFile);
+        Finally
+            Try
+                Close(MyFile);
+            Except
+                CodeError := FilePathError;
+            End;
+        End;
+    End;
+    CheckReWriteFilePath := CodeError;
+End;
+
+
+Function CheckResetFilePath(FilePath: String): Errors;
+Var
+    CodeError: Errors;
+    MyFile: TextFile;
+    Ext: String;
+    Cht: Char;
+
+Begin
+    CodeError := Success;
+    If Not FileExists(FilePath) Then
+        CodeError := FileExistsError;
+    If CodeError = Success Then
+    Begin
+        Ext := ExtractFileExt(FilePath);
+        If Not (Ext = '.txt') Then
+            CodeError := FileExtentError;
+    End;
+    If CodeError = Success Then
+    Begin
+        AssignFile(MyFile, FilePath);
+        Try
+            Reset(MyFile);
+        Except
+            CodeError := FilePathError;
+        End;
+        If (CodeError = Success) And (Not EoF(MyFile)) Then
+        Begin
+            Cht := ' ';
+            While (Not EoF(MyFile)) And ((Cht = ' ') Or (Cht = #13) Or (Cht = #10)) Do
+                Read(MyFile, Cht);
+            If EoF(MyFile) And ((Cht = ' ') Or (Cht = #13) Or (Cht = #10)) Then
+                CodeError := EmptyFileError;
+        End;
+        If Not (CodeError = FilePathError) Then
+            Close(MyFile);
+    End;   
+    CheckResetFilePath := CodeError;
+End;
+
+
+Function ReadFileMatrix(Var MyFile: TextFile; Var Matrix: TMatrix; Size: Integer): Errors;
+Var
+    CodeError: Errors;
+    I, J: Integer;
+
+Begin
+    CodeError := Success;
+    SetLength(Matrix, Size);
+    For I := 0 To High(Matrix) Do
+        SetLength(Matrix[I], Size - I);
+    I := 0;
+    While (CodeError = Success) And (Not EoF(MyFile)) And (I < Size) Do
+    Begin
+        J := 0;
+        While (J < Size - I) And (CodeError = Success) And (Not EoF(MyFile)) Do
+        Begin
+            Try
+                Read(MyFile, Matrix[I][J]);
+            Except
+                CodeError := FileMatrixError;
+            End;
+            If (CodeError = Success) And ((Matrix[I][J] > MAX_VALUE) Or
+                (Matrix[I][J] < MIN_VALUE)) Then
+                CodeError := FileMatrixError;
+            Inc(J);
+        End;
+        Inc(I);
+    End;
+    If EoF(MyFile) Then
+        CodeError := FileLowNumberError;
+    ReadFileMatrix := CodeError;
+End;
+
+
+Function ReadFileArrayFree(Var MyFile: TextFile; Var ArrayFree: TArray; Size: Integer): Errors;
+Var
+    CodeError: Errors;
+    I: Integer;
+    Cht: Char;
+
+Begin
+    SetLength(ArrayFree, Size);
+    CodeError := Success;
+    I := 0;
+    While (CodeError = Success) And (I < Size) And (Not Eof(MyFile)) Do
+    Begin
+        Try
+            Read(MyFile, ArrayFree[I]);
+        Except
+            CodeError := FileMatrixError;
+        End;
+        If (CodeError = Success) And
+              ((ArrayFree[I] > MAX_VALUE) Or (ArrayFree[I] < MIN_VALUE)) Then
+            CodeError := FileMatrixError;
+        Inc(I);
+    End;
+    If (CodeError = Success) And (Not EoF(MyFile)) Then
+    Begin
+        Cht := ' ';
+        While (Not EoF(MyFile)) And
+              ((Cht = ' ') Or (Cht = #13) Or (Cht = #10) Or (Cht = #13#10)) Do
+              Read(MyFile, Cht);
+        If Not EoF(MyFile) And Not ((Cht = ' ') Or (Cht = #13) Or (Cht = #10)) Then
+            CodeError := FileHighNumberError;
+    End;
+    If (CodeError = Success) And (I < Size) Then
+        CodeError := FileLowNumberError;
+    ReadfileArrayFree := CodeError;
+End;
+
+
+Procedure InputFromFile(Var Matrix: TMatrix; Var ArrayFree: TArray);
+Var
+    FilePath: String;
+    MyFile: TextFile;
+    CodeError: Errors;
+    Size: Integer;
+
+Begin
+    Repeat
+        Size := 0;
+        Writeln('Введите путь файла()');
+        Readln(FilePath);
+        CodeError := CheckResetFilePath(FilePath);
+        If CodeError = Success Then
+        Begin
+            AssignFile(MyFile, FilePath);
+            Reset(MyFile);
+            Try
+                Readln(MyFile, Size);
+            Except
+                CodeError := FileSizeError;
+            End;
+            If (CodeError = Success) And
+               ((Size < MIN_SIZE) Or (Size > MAX_SIZE)) Then 
+                CodeError := FileSizeError;
+            If Codeerror = Success Then
+                CodeError := ReadFileMatrix(MyFile, Matrix, Size);
+            If CodeError = Success Then
+                CodeError := ReadFileArrayFree(MyFile, ArrayFree, Size);
+            Close(MyFile);
+        End;
+        WriteError(CodeError);
+    Until CodeError = Success;
+End;
+
+
+Procedure InputtingData(Var Matrix: TMatrix; Var ArrayFree: TArray);
+Begin
+    Writeln('Введите 0 если ввод данных будет осуществляться через консоль');
+    Writeln('Введите 1 если ввод данных будет осуществляться через файл');
+    If Choice() Then
+        InputFromFile(Matrix, ArrayFree)
+    Else
+        InputFromConsole(Matrix, ArrayFree);
+End;
+
+
+Procedure OutputInFile(Arr: TArray); // read filename for writing data
+Var
+    CodeError: Errors;
+    FilePath: String;
+    MyFile: TextFile;
+    I: Integer;
+
+Begin
+    Repeat
+        Writeln('Введите путь файла()');
+        Readln(FilePath);
+        CodeError := CheckReWriteFilePath(FilePath);
+        WriteError(Success);
+    Until CodeError = Success;
+    AssignFile(MyFile, FilePath);
+    ReWrite(MyFile);
+    For I := 0 To High(Arr) Do
+        Write(MyFile, Arr[I]:8:5, ' ');
+    Close(MyFile);
+End;
+
+
+Procedure OutputInConsole(ArrayAnswer: TArray);
+Var
+    I: Integer;
+    
+Begin
+    For I := 0 To High(ArrayAnswer) Do
+        Write(ArrayAnswer[I]:8:5 ,' ');
+End;
+
+
+Procedure OutputtingAnswer(ArrayAnswer: TArray);
+Begin
+    Writeln('Введите 0 если вывод данных будет осуществляться в консоль');
+    Writeln('Введите 1 если вывод данных будет осуществляться в файл');
+    If Choice() Then
+        OutputInFile(ArrayAnswer)
+    Else
+        OutputInConsole(ArrayAnswer);
+End;
+
+
+Function CountRoots(Matrix: TMatrix; ArrayFree: TArray): TArray;
+Var
+    Temp, I, J: Integer;
+    ArrayAnswer: TArray;
+    
+Begin
+    Temp := High(Matrix);
+    Setlength(ArrayAnswer, Temp + 1);
+    For I := 0 To High(Matrix) Do
+    Begin
+        For J := I DownTo 0 Do
+            ArrayFree[Temp] := ArrayFree[Temp] - ArrayAnswer[J + Temp] * Matrix[Temp][J];
+        ArrayAnswer[Temp] := ArrayFree[Temp] / Matrix[Temp][0];
+        Dec(Temp);
+    End;
+    CountRoots := ArrayAnswer;
+End;
+
+
+Var
+    Matrix: TMatrix;
+    ArrayFree, ArrayAnswer: TArray;
+
+Begin
+    Writeln('Программа выполняет обратный ход в решении системы уравнения методом Гаусса');
+    InputtingData(Matrix, ArrayFree);
+    ArrayAnswer := CountRoots(Matrix, ArrayFree);
+    OutputtingAnswer(ArrayAnswer);
+    Readln;
+End.

@@ -1,0 +1,77 @@
+Program Lab1_1;
+
+Uses
+    System.SysUtils;
+
+Const
+    MAXANGLE = 180.0;
+    MINANGLE = 0.0;
+
+Var
+    Angle1, Angle2: Real;
+    IsCorrect, CorrectAngle, Flag, CorrectAns: Boolean;
+
+Begin
+    Writeln('The program determines whether a triangle is acute-angled');
+    Flag := True;
+    IsCorrect := True;
+    While Flag Do
+    Begin
+        Write('Enter the first angle ');
+        Writeln('(in degrees from 0 to 180 not inclusive)');
+        Repeat
+        Begin
+            Try // reading first angle
+                Readln(Angle1);
+                IsCorrect := True;
+            Except
+                Writeln('Enter numeric values');
+                IsCorrect := False;
+            End;
+            If (IsCorrect And Not((Angle1 > MINANGLE) And
+              (Angle1 < MAXANGLE))) Then
+            Begin
+                Writeln('The angle is entered incorrectly');
+                Writeln('Enter the correct angle');
+                IsCorrect := False;
+            End;
+        End;
+        Until IsCorrect;
+
+        Write('Enter the second angle ');
+        Writeln('(in degrees from 0 to 180 not inclusive)');
+        Repeat
+        Begin
+            Try // reading first angle
+                Readln(Angle2);
+                IsCorrect := True;
+            Except
+                Writeln('Enter numeric values');
+                IsCorrect := False;
+            End;
+            If (IsCorrect And Not((Angle2 > MINANGLE) And
+              (Angle2 < MAXANGLE))) Then
+            Begin
+                Writeln('The angle is entered incorrectly');
+                Writeln('Enter the correct angle');
+                IsCorrect := False;
+            End;
+        End;
+        Until IsCorrect;
+
+        If (Angle1 + Angle2) < MAXANGLE Then
+            Flag := False
+        Else
+        Begin
+            Writeln('There is no triangle with such angles');
+            Writeln('Try entering the angles again');
+        End;
+    End;
+
+    If ((Angle1 + Angle2) > 90) And (Angle1 < 90) And (Angle2 < 90) Then
+        Writeln('The triangle is acute-angled')
+    Else
+        Writeln('The triangle is not acute-angled');
+    Readln;
+
+End.

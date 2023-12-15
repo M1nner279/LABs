@@ -1,0 +1,413 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+constexpr double MAX_SIZE = 1000;
+constexpr double MAX_VALUE = 1000;
+constexpr double MIN_VALUE = -1000;
+//D:\tests\Lab2\2_3\test1.txt
+
+using std::cin;
+using std::cout;
+using std::string;
+using std::ifstream;
+using std::ofstream;
+using std::ios_base;
+
+enum Errors 
+{
+	success, 
+	typeError, 
+	rangeError, 
+	matrixError, 
+	freeArrError, 
+	filePathError, 
+	fileExtentError, 
+
+	fileTextError,
+
+	fileMatrixError,
+	fileFreeArrError,
+	fileLowNumberError,
+	fileHighNumberError,
+	fileNumbError,
+	choiceError
+};
+
+bool choice(); // return true if from file
+int readConsoleSize(int, int);
+Errors checkConsoleNumb(int, int, double); // return Errors
+void writeError(Errors); // printing error messages
+double** readConsoleMatrix(int);
+double* readConsoleFreeArray(int);
+string readInFilepath(); // read filePath for reading data
+string readOutFilepath(); // read filePath for writing data
+Errors checkFileNumb(ifstream&, double, int, int);
+Errors checkFile(string);
+double** readFileMatrix(ifstream&, int);
+double* readFileFreeArray(ifstream&, int);
+double* countRoots(double**&, double*&, int);
+void writeConsoleArrayAnswer(double*&, int);
+void writeFileArrayAnswer(double*, int);
+
+int main()
+{
+	int size; 
+	Errors flag;
+	double* arrayFree;
+	double *arrayAnswer;
+	double** matrix;
+	string filepath;
+
+    setlocale(LC_ALL, "Russian");
+    cout << "Программа выполняет обратный ход в решении системы уравнения методом Гаусса\n";
+	cout << "Введите 0 если ввод данных будет осуществляться через консоль\n";
+	cout << "Введите 1 если ввод данных будет осуществляться через файл\n";
+
+	if (choice())
+	{
+		do {
+			flag = success;
+			filepath = readInFilepath();
+			flag = checkFile(filepath);
+			writeError(flag);
+		} while (flag);
+		ifstream file(filepath);
+		file >> size;
+		matrix = readFileMatrix(file, size);
+		arrayFree = readFileFreeArray(file, size);
+		file.close();
+	}
+	else
+	{
+		cout << "Введите размерность матрицы: ";
+		size = readConsoleSize(2, MAX_SIZE);
+		matrix = readConsoleMatrix(size);
+		arrayFree = readConsoleFreeArray(size);
+	}
+
+	arrayAnswer = countRoots(matrix, arrayFree, size);
+	cout << "Введите 0 если вывод данных будет осуществляться в консоль\n";
+	cout << "Введите 1 если вывод данных будет осуществляться в файл\n";
+
+	if (choice())
+		writeFileArrayAnswer(arrayAnswer, size);
+	else
+		writeConsoleArrayAnswer(arrayAnswer, size);
+	return 0;
+}
+
+bool choice() {
+	int choi;
+	bool isIncorrect;
+	do
+	{
+		isIncorrect = false;
+		cin >> choi;
+		if (cin.fail())
+		{
+			isIncorrect = true;
+			cin.clear();
+			cout << "Вводите число 0 или 1: ";
+			while (cin.get() != '\n');
+		}
+		if (!isIncorrect && cin.get() != '\n')
+		{
+			isIncorrect = true;
+			cout << "Вводите число 0 или 1: ";
+			while (cin.get() != '\n');
+		}
+		if (!isIncorrect && (choi > 1 || choi < 0))
+		{
+			isIncorrect = true;
+			cout << "Вводите 0 или 1: ";
+		}
+	} while (isIncorrect);
+	return choi;
+}
+
+int readConsoleSize(int minValue, int maxValue)
+{
+	int numb;
+	Errors codeError;
+	do
+	{
+		cin >> numb;
+		codeError = success;
+		if (cin.fail())
+		{
+			codeError = typeError;
+			cin.clear();
+			while (cin.peek() != ' ' && cin.peek() != '\n')
+				cin.get();
+		}
+		if (cin.peek() != ' ' && cin.peek() != '\n')
+		{
+			codeError = typeError;
+			while (cin.peek() != ' ' && cin.peek() != '\n')
+				cin.get();
+		}
+		if (!codeError && (numb > MAX_VALUE || numb < MIN_VALUE))
+			codeError = rangeError;
+		writeError(codeError);
+	} while (codeError);
+	return numb;
+}
+
+Errors checkConsoleNumb(int LOW_BOUND, int HIGH_BOUND, double numb) {
+	Errors codeError;
+	codeError = success;
+	if (cin.fail()) 
+	{
+		codeError = typeError;
+		cin.clear();
+		while (cin.peek() != ' ' && cin.peek() != '\n')
+			cin.get();
+	}
+	if (cin.peek() != ' ' && cin.peek() != '\n') 
+	{
+		codeError = typeError;
+		while (cin.peek() != ' ' && cin.peek() != '\n')
+			cin.get();
+	}
+	if (!codeError && (numb > HIGH_BOUND || numb < LOW_BOUND))
+		codeError = rangeError;
+	return codeError;
+}
+
+void writeError(Errors codeError) {
+	switch (codeError) {
+	case typeError:
+		cout << "Type Error\n";
+		break;
+	case rangeError:
+		cout << "Range Error\n";
+		break;
+	case matrixError:
+		cout << "Matrix Error";
+		break;
+	case freeArrError:
+		cout << "FreeArr Error\n";
+		break;
+	case filePathError:
+		cout << "FileName Error\n";
+		break;
+	case fileExtentError:
+		cout << "fileExtent Error\n";
+		break;
+	case fileTextError:
+		cout << "FileText Error\n";
+		break;
+	case fileMatrixError:
+		cout << "FileMatrix Error\n";
+		break;
+	case fileFreeArrError:
+		cout << "FileFreeArr Error\n";
+		break;
+	case fileLowNumberError:
+		cout << "FileLowNumber Error\n";
+		break;
+	case fileHighNumberError:
+		cout << "FileHighNumber Error\n";
+		break;
+	case fileNumbError:
+		cout << "FileNumb Error\n";
+		break;
+	case choiceError:
+		cout << "Вводите 0 или 1: ";
+		break;
+	default:
+		break;
+	}
+}
+
+double** readConsoleMatrix(int size)
+{
+	Errors flag;
+	double** matrix = new double* [size];
+	for (int i = 0; i < size; i++)
+		matrix[i] = new double[size - i];
+	cout << "Введите треугольную матрицу (вводить только элементы на главной " 
+		 << "диагонали и выше) размерности " << size << ":\n";
+	do
+	{
+		flag = success;
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size - i; j++) {
+				cin >> matrix[i][j];
+				if (checkConsoleNumb(-1000, 1000, matrix[i][j])) 
+					flag = matrixError;
+			}
+		}
+		writeError(flag);
+	} while (flag);
+	return matrix;
+} // bcghfdbm
+
+double* readConsoleFreeArray(int size) 
+{
+	double* array = new double[size]; //todo for 0 elements in matrix
+	Errors flag;
+	cout << "Введите вектор свободных членов:\n";
+	do 
+	{
+		flag = success;
+		for (int i = 0; i < size; i++) 
+		{
+			cin >> array[i];
+			if (cin.fail())
+			{
+				flag = typeError;
+				cin.clear();
+				while (cin.peek() != ' ' && cin.peek() != '\n')
+					cin.get();
+			}
+			if (cin.peek() != ' ' && cin.peek() != '\n')
+			{
+				flag = typeError;
+				while (cin.peek() != ' ' && cin.peek() != '\n')
+					cin.get();
+			}
+			if (!flag && (array[i] > MAX_VALUE || array[i] < MIN_VALUE))
+				flag = rangeError;
+		}
+		if (flag) flag = freeArrError;
+		writeError(flag);
+	} while (flag);
+	return array;
+}
+	
+string readInFilepath() 
+{
+	string filePath;
+	Errors codeError;
+	cout << "Введите имя файла:\n";
+	do {
+		std::getline(cin, filePath);
+		codeError = success;
+		ifstream file(filePath);
+		if (!file.is_open()) 
+			codeError = filePathError;
+		/*if (codeError == 0)*/
+		file.close();
+		if (codeError == 0 && filePath.substr(filePath.find('.')) != ".txt")
+			codeError = fileExtentError;
+		writeError(codeError);
+	} while (codeError > 0);
+	return filePath;
+}
+
+string readOutFilepath()
+{
+	string filepath;
+	Errors codeError;
+	cout << "Введите имя файла:\n";
+	do {
+		std::getline(cin, filepath);
+		codeError = success;
+		ofstream file(filepath, ios_base::app);
+		if (!file.is_open())
+			codeError = filePathError;
+		if (codeError == 0) file.close();
+		if (codeError == 0 && filepath.substr(filepath.find('.')) != ".txt")
+			codeError = fileExtentError;
+		writeError(codeError);
+	} while (codeError > 0);
+	return filepath;
+}
+
+Errors checkFileNumb(ifstream& fin, double numb, int LOW_BOUND, int HIGH_BOUND) 
+{
+	Errors errorNumb;
+	errorNumb = success;
+	if (fin.fail()) 
+	{
+		errorNumb = fileNumbError;
+		fin.clear();
+		while (!fin.eof() && fin.peek() != ' ' && fin.peek() != '\n')
+			fin.get();
+	}
+	if (fin.peek() != ' ' && fin.peek() != '\n' && !fin.eof()) 
+	{
+		errorNumb = fileNumbError;
+		while (fin.peek() != ' ' && fin.peek() != '\n' && !fin.eof())
+			fin.get();
+	}
+	if (errorNumb == 0 && (numb > HIGH_BOUND || numb < LOW_BOUND))
+		errorNumb = fileNumbError;
+	return errorNumb;
+}
+
+Errors checkFile(string filepath)
+{
+	Errors codeError;
+	int size, count;
+	double numb;
+	ifstream fin(filepath);
+	fin >> size;
+	codeError = checkFileNumb(fin, size, -1000, 1000);
+	if (!codeError) size = (size + 3) * size / 2;
+	count = 0;
+	while (!codeError && !fin.eof()) {
+		fin >> numb;
+		count++;
+		codeError = checkFileNumb(fin, numb, -1000, 1000);
+		while (!fin.eof() && (fin.peek() == ' ' || fin.peek() == '\n')) fin.get();
+	}
+	if (fin.eof()) {
+		if (count < size) codeError = fileLowNumberError;
+		if (count > size) codeError = fileHighNumberError;
+ 	}
+	fin.close();
+	return codeError;
+}
+
+double** readFileMatrix(ifstream& fin, int size)
+{
+	double** matrix = new double* [size];
+	for (int i = 0; i < size; i++)
+		matrix[i] = new double[size - i];
+	for (int i = 0; i < size; i++) 
+		for (int j = 0; j < size - i; j++)
+			fin >> matrix[i][j];
+	return matrix;
+}
+
+double* readFileFreeArray(ifstream& fin, int size)
+{
+	double* array = new double[size];
+	for (int i = 0; i < size; i++) {
+		fin >> array[i];
+	}
+	return array;
+}
+
+double* countRoots(double**& matrix, double*& arrayFree, int size) {
+	int temp = size - 1;
+	double* answer = new double[size];
+	for (int i = 0; i < size; i++) {
+		for (int j = i; j > 0; j--) {
+			arrayFree[temp] -= answer[j + temp] * matrix[temp][j];
+		}
+		answer[temp] = arrayFree[temp] / matrix[temp][0];
+		temp--;
+	}
+	return answer;
+}
+
+void writeConsoleArrayAnswer(double*& array, int size) {
+	cout << "Массив ответов:\n";
+	for (int i = 0; i < size; i++)
+		cout << array[i] << " ";
+}
+
+void writeFileArrayAnswer(double* array, int size)
+{			
+	cout << "Если файл не существует, то он будет создан по введённому пути.\n"
+		 << "Если файл существует, то ответ будет записан в конец файла:\n";
+	string filepath;
+	filepath = readOutFilepath();
+	ofstream fout(filepath, ios_base::app);
+	for (int i = 0; i < size; i++)
+		fout << array[i] << " ";
+	fout.close();
+}

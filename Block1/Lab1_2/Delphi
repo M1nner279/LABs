@@ -1,0 +1,35 @@
+Program Lab1_2;
+
+Uses
+    System.SysUtils;
+
+Var
+    Numb, Sum, I: Integer;
+    IsCorrect: Boolean;
+
+Begin
+    Writeln('The program counts the sum of N natural numbers');
+    Writeln('Enter a natural number N');
+    Repeat
+    Begin
+        IsCorrect := True;
+        Try
+            Readln(Numb);
+        Except
+            Writeln('Error');
+            Writeln('Enter a natural number');
+            IsCorrect := False;
+        End;
+        If IsCorrect And (Numb < 1) Then
+        Begin
+            Writeln('Error');
+            Writeln('Enter a natural number');
+            IsCorrect := False;
+        End;
+    End;
+    Until IsCorrect;
+    For I := 1 To Numb Do
+        Sum := Sum + I;
+    Writeln('The sum of ', Numb, ' natural numbers equals to ', Sum);
+    Readln;
+End.

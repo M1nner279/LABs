@@ -1,0 +1,373 @@
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.Scanner;
+import java.io.File;
+import java.io.PrintWriter;
+//D:\tests\Lab2\2_3\test1.txt
+public class Main {
+    enum Errors {
+        success,
+        typeError,
+        rangeError,
+        matrixError,
+        arrayFreeError,
+        filePathError,
+        fileExtentError,
+        emptyFileError,
+        fileMatrixError,
+        fileArrayFreeError,
+        fileLowNumberError,
+        fileHighNumberError,
+        fileNumbError,
+        choiceError
+    }
+    static final String[] MESSAGES = {
+            "Success",
+            "TypeError",
+            "rangeError",
+            "matrixError",
+            "freeArrError",
+            "filePathError",
+            "fileExtentError",
+            "emptyFileError",
+            "fileMatrixError",
+            "fileFreeArrError",
+            "fileLowNumberError",
+            "fileHighNumberError",
+            "fileNumbError",
+            "choiceError" };
+    static final int MIN_VALUE = -1000;
+    static final int MAX_VALUE = 1000;
+    static final int MIN_SIZE = 2;
+    static final int MAX_SIZE = 1000;
+    static Scanner scan = new Scanner(System.in);
+
+    static boolean choice() {
+        int choi;
+        Errors codeError;
+        choi = 0;
+        do {
+            codeError = Errors.success;
+            try {
+                choi = Integer.parseInt(scan.nextLine());
+            }
+            catch (NumberFormatException e) {
+                codeError = Errors.choiceError;
+            }
+            if (codeError == Errors.success && (choi > 1 || choi < 0))
+                codeError = Errors.choiceError;
+            System.err.println(MESSAGES[codeError.ordinal()]);
+        } while(codeError != Errors.success);
+        return choi == 1;
+    }
+
+    static int readConsoleSize() {
+        int size;
+        Errors codeError;
+        size = 0;
+        do {
+            codeError = Errors.success;
+            try {
+                size = Integer.parseInt(scan.next());
+            } catch (NumberFormatException e) {
+                codeError = Errors.typeError;
+            }
+            if (codeError == Errors.success && (size < MIN_SIZE || size > MAX_SIZE))
+                codeError = Errors.rangeError;
+            System.err.println(MESSAGES[codeError.ordinal()]);
+        } while(codeError != Errors.success);
+        return size;
+    }
+
+    static double[][] readConsoleMatrix (int size) {
+        Errors codeError;
+        double[][] matrix;
+        matrix = new double[size][];
+        for (int i = 0; i < size; i++)
+            matrix[i] = new double[size - i];
+        System.out.printf("Введите треугольную матрицу (вводить только элеметы на шлавной диагонали и выше) " +
+                "размерности %d:\n", size);
+        do {
+            codeError = Errors.success;
+            for (int i = 0; i < size; i++)
+                for (int j = 0; j < size - i; j++) {
+                    try {
+                        matrix[i][j] = Double.parseDouble(scan.next());
+                    }
+                    catch (NumberFormatException e) {
+                        codeError = Errors.matrixError;
+                    }
+                    if (codeError == Errors.success && (matrix[i][j] < MIN_VALUE || matrix[i][j] > MAX_VALUE))
+                        codeError = Errors.matrixError;
+                }
+            System.err.println(MESSAGES[codeError.ordinal()]);
+        } while(codeError != Errors.success);
+        return matrix;
+    }
+
+    static double[] readConsoleArrayFree(int size) {
+        double[] arrayFree;
+        arrayFree = new double[size];
+        Errors codeError;
+        System.out.printf("Введите массив %d свободных членов:\n", size);
+        do {
+            codeError = Errors.success;
+            for (int i = 0; i < size; i++) {
+                try {
+                    arrayFree[i] = Double.parseDouble(scan.next());
+                } catch (NumberFormatException e) {
+                    codeError = Errors.arrayFreeError;
+                }
+                if (codeError == Errors.success && (arrayFree[i] < MIN_VALUE || arrayFree[i] > MAX_VALUE))
+                    codeError = Errors.arrayFreeError;
+            }
+            System.err.println(MESSAGES[codeError.ordinal()]);
+        } while(codeError != Errors.success);
+        return arrayFree;
+    }
+
+    static double[][] inputFromConsole() {
+        int size;
+        double[][] matrix, joinedMatrix;
+        double[] arrayFree;
+        size = readConsoleSize();
+        matrix = readConsoleMatrix(size);
+        arrayFree = readConsoleArrayFree(size);
+        joinedMatrix = new double[size][];
+        for (int i = 0; i < size; i++) {
+            joinedMatrix[i] = new double[size + 1 - i];
+            joinedMatrix[i][0] = arrayFree[i];
+            for (int j = 0; j < size - i; j++)
+                joinedMatrix[i][j + 1] = matrix[i][j];
+        }
+        return joinedMatrix;
+    }
+
+    static Errors checkReadFile(String filePath){
+        Errors codeError;
+        File myFile = new File(filePath);
+        codeError = Errors.success;
+        if (!myFile.exists() || !myFile.isFile())
+            codeError = Errors.filePathError;
+        if (codeError == Errors.success && !filePath.endsWith(".txt"))
+            codeError = Errors.fileExtentError;
+        if (codeError == Errors.success && !myFile.canRead()) {
+            codeError = Errors.filePathError;
+            //ToDo check empty
+        }
+        return codeError;
+    }
+
+    static Errors checkWriteFile(String filePath) {
+        Errors codeError;
+        File myFile = new File(filePath);
+        codeError = Errors.success;
+        if (!myFile.exists())
+            codeError = Errors.filePathError;
+        if (codeError == Errors.success && !filePath.endsWith(".txt"))
+            codeError = Errors.fileExtentError;
+        if (codeError == Errors.success && !myFile.canWrite())
+            codeError = Errors.filePathError;
+        return codeError;
+    }
+
+    static double[][] readFileMatrix(Scanner fin, int size) {
+        Errors codeError;
+        double[][] matrix;
+        codeError = Errors.success;
+        matrix = new double[size][];
+        for (int i = 0; i < size; i++) {
+            matrix[i] = new double[size - i];
+        }
+        for (int i = 0; codeError == Errors.success && fin.hasNext() && i < size; i++)
+            for (int j = 0; codeError == Errors.success && fin.hasNext() && j < size - i; j++) {
+                try {
+                    matrix[i][j] = Double.parseDouble(fin.next());
+                }
+                catch (NumberFormatException e) {
+                    codeError = Errors.fileMatrixError;
+                }
+                if (codeError == Errors.success && (matrix[i][j] < MIN_VALUE || matrix[i][j] > MAX_VALUE))
+                    codeError = Errors.fileMatrixError;
+            }
+        if (!fin.hasNext())
+            codeError = Errors.fileLowNumberError;
+        if (codeError != Errors.success) {
+            System.out.println(MESSAGES[codeError.ordinal()]);
+            matrix = null;
+        }
+        return matrix;
+    }
+
+    static double[] readFileArrayFree(Scanner fin, int size){
+        Errors codeError;
+        double[] arrayFree;
+        codeError = Errors.success;
+        arrayFree = new double[size];
+        int i = 0;
+        for (; codeError == Errors.success && i < size && fin.hasNext(); i++){
+            try {
+                arrayFree[i] = Double.parseDouble(fin.next());
+            }
+            catch (NumberFormatException e) {
+                codeError = Errors.fileArrayFreeError;
+            }
+            if (codeError == Errors.success && (arrayFree[i] < MIN_VALUE || arrayFree[i] > MAX_VALUE))
+                codeError = Errors.fileArrayFreeError;
+        }
+        if (codeError == Errors.success && fin.hasNext())
+            codeError = Errors.fileHighNumberError;
+        if (codeError == Errors.success && i < size)
+            codeError = Errors.fileLowNumberError;
+        if (codeError != Errors.success) {
+            System.err.println(MESSAGES[codeError.ordinal()]);
+            arrayFree = null;
+        }
+        return arrayFree;
+    }
+
+    static double[][] inputFromFile () {
+        Errors codeError;
+        String fileName;
+        double[][] joinedMatrix, matrix;
+        double[] arrayFree;
+        int size;
+        Scanner fin;
+        System.out.println("Файл должен быть текстовым и содержать в первой строке размерность треугольной " +
+                "матрицы и длину массива свободных членов");
+        do {
+            fin = null;
+            System.out.print("Введите путь файла: ");
+            fileName = scan.nextLine();
+            joinedMatrix = null;
+            matrix = new double[1][1];
+            arrayFree = new double[1];
+            size = 0;
+            codeError = checkReadFile(fileName);
+            if (codeError == Errors.success) {
+                try {
+                    fin = new Scanner(new FileReader(fileName));
+                }
+                catch (FileNotFoundException e) {
+                    codeError = Errors.filePathError;
+                }
+                if (!fin.hasNext())
+                    codeError = Errors.emptyFileError;
+                try {
+                    size = Integer.parseInt(fin.next());
+                }
+                catch (NumberFormatException e) {
+                    codeError = Errors.fileNumbError;
+                }
+                if (codeError == Errors.success && (size < MIN_SIZE || size > MAX_SIZE))
+                    codeError = Errors.fileNumbError;
+                if (codeError == Errors.success)
+                    matrix = readFileMatrix(fin, size);
+                if (codeError == Errors.success && matrix != null)
+                    arrayFree = readFileArrayFree(fin, size);
+                else
+                    arrayFree = null;
+                if (codeError == Errors.success && arrayFree != null) {
+                    joinedMatrix = new double[size][];
+                    for (int i = 0; i < size; i++) {
+                        joinedMatrix[i] = new double[size + 1 - i];
+                        joinedMatrix[i][0] = arrayFree[i];
+                        for (int j = 0; j < size - i; j++)
+                            joinedMatrix[i][j + 1] = matrix[i][j];
+                    }
+                }
+                fin.close();
+            }
+            if (arrayFree != null)
+                System.err.println(MESSAGES[codeError.ordinal()]);
+            else
+                codeError = Errors.fileMatrixError;
+        } while (codeError != Errors.success);
+        return joinedMatrix;
+    }
+
+    static double[][] inputData() {
+        System.out.println("Введите 0 если ввод данных будет осуществляться через консоль");
+        System.out.println("Введите 1 если ввод данных будет осуществляться через файл");
+        double[][] joinedMatrix;
+        if (choice())
+            joinedMatrix = inputFromFile();
+        else {
+            joinedMatrix = inputFromConsole();
+        }
+        return joinedMatrix;
+    }
+
+    static void outputInFile (double[] arrayAnswer) {
+        String filePath;
+        Errors codeError;
+        PrintWriter fout = null;
+        System.out.print("Введите путь файла для вывода: ");
+        do {
+            filePath = scan.nextLine();
+            codeError = checkWriteFile(filePath);
+            if (codeError == Errors.success) {
+                try {
+                    fout = new PrintWriter(filePath);
+                }
+                catch (FileNotFoundException e){
+                    codeError = Errors.filePathError;
+                }
+            }
+            System.err.println(MESSAGES[codeError.ordinal()]);
+        } while(codeError != Errors.success);
+        for (int i = 0; i < arrayAnswer.length; i++) {
+            fout.printf("%.5f ", arrayAnswer[i]);
+        }
+        fout.close();
+    }
+
+    static void outputInConsole (double[] arrayAnswer) {
+        System.out.println("Массив ответов:");
+        for (int i = 0; i < arrayAnswer.length; i++) {
+            System.out.printf("%.5f ", arrayAnswer[i]);
+        }
+    }
+
+    static void outputtingAnswer (double[] arrayAnswer) {
+        System.out.println("Введите 0 если вывод данных будет осуществляться в консоль");
+        System.out.println("Введите 1 если вывод данных будет осуществляться в файл");
+        if (choice())
+            outputInFile(arrayAnswer);
+        else
+            outputInConsole(arrayAnswer);
+    }
+
+    static double[] countRoots(double[][] joinedMatrix) {
+        double[][] matrix;
+        double[] arrayFree;
+        int size = joinedMatrix.length;
+        arrayFree = new double[size];
+        matrix = new double[size][];
+        for (int i = 0; i < size; i++) {
+            arrayFree[i] = joinedMatrix[i][0];
+            matrix[i] = new double[size - i];
+            for (int j = 0; j < size - i; j++)
+                matrix[i][j] = joinedMatrix[i][j + 1];
+        }
+        int temp = size - 1;
+        double[] answer = new double[size];
+        for (int i = 0; i < size; i++) {
+            for (int j = i; j > -1; j--)
+                arrayFree[temp] -= answer[j + temp] * matrix[temp][j];
+            answer[temp] = arrayFree[temp] / matrix[temp][0];
+            temp--;
+        }
+        return answer;
+    }
+
+    public static void main(String[] args) {
+        double[][] joinedMatrix;
+        double[] arrayAnswer;
+        System.out.println("Программа выполняет обратный ход в решении системы уравнения методом Гаусса");
+        joinedMatrix = inputData();
+        arrayAnswer = countRoots(joinedMatrix);
+        outputtingAnswer(arrayAnswer);
+        scan.close();
+    }
+}

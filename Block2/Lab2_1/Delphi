@@ -1,0 +1,72 @@
+Program Lab2_1;
+
+Uses
+    System.SysUtils;
+
+Const
+    MAX_NUMB = 10000;
+
+Var
+    Size, I, Temp, IndexLastEvenNumb: Integer;
+    Arr: Array Of Integer;
+    IsCorrect: Boolean;
+
+Begin
+    Writeln('The program changes the array so that at the beginning there are ',
+            'all even and then odd elements of the array');
+    Writeln('Input a size of array (natural number less then ', MAX_NUMB, '):' );
+    Repeat
+        IsCorrect := True;  
+        Try
+            Readln(Size);
+        Except
+            Writeln('Error', #13#10, 'Input a natural number (less then ', 
+                     MAX_NUMB,'): ');
+            IsCorrect := False;
+        End;
+        If IsCorrect And ((Size > MAX_NUMB) Or (Size < 1)) Then
+        Begin
+            IsCorrect := False;
+            Writeln('Error', #13#10, 'Input a natural number (less then ',
+                     MAX_NUMB, '): ');
+        End;
+    Until IsCorrect;
+    SetLength(Arr, Size);
+    For I := 0 To High(Arr) Do
+    Begin
+        Writeln('Input ', (I + 1), ' element of array (natural number less then ',
+                 MAX_NUMB, '):' );
+        Repeat
+            IsCorrect := True;  
+            Try
+                Readln(Arr[I]);
+            Except
+                Writeln('Error', #13#10, 'Input a natural number (less then ',
+                         MAX_NUMB,'): ');
+                IsCorrect := False;
+            End;
+            If IsCorrect And ((Arr[I] > MAX_NUMB) Or (Arr[I] < 1)) Then
+            Begin
+                IsCorrect := False;
+                Writeln('Error', #13#10, 'Input a natural number (less then ',
+                         MAX_NUMB, '): ');
+            End;
+        Until IsCorrect;
+    End;
+    Writeln('First array:');
+    For I := 0 To High(Arr) Do
+        Write(Arr[I], ' ');
+    IndexLastEvenNumb := 0;
+    For I := 0 To High(Arr) Do
+        If (Arr[I] mod 2) = 0 Then
+        Begin
+            Temp := Arr[I];
+            Arr[I] := Arr[IndexLastEvenNumb];
+            Arr[IndexLastEvenNumb] := Temp;
+            Inc(IndexLastEvenNumb);
+        End;
+    Writeln(#13#10, 'New array:');
+    For I := 0 To High(Arr) Do
+        Write(Arr[I], ' ');
+    readln;
+End.
